@@ -1,4 +1,3 @@
-// app/_layout.js
 import { Stack } from "expo-router";
 
 export default function Layout() {
@@ -9,6 +8,10 @@ export default function Layout() {
         headerTintColor: "#fff",
         headerTitleStyle: { fontWeight: "bold" },
       }}
-    />
+    >
+      <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="home" options={{ title: "Home" }} />
+      <Stack.Screen name="detail" options={{ title: "Detail" }} />
+    </Stack>
   );
 }

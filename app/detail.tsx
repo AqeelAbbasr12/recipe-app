@@ -1,111 +1,149 @@
-import { Image, ImageBackground, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Animated, Image, ImageBackground, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
-export default function RecipeDetail() {
+const IMAGE_HEIGHT = 300;
+
+export default function Detail() {
+  const { id } = useLocalSearchParams();
+  const [meal, setMeal] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const router = useRouter();
+
+  const ingredients: { name: string; measure: string }[] = [];
+  if (meal) {
+    for (let i = 1; i <= 20; i++) {
+      const ingredient = meal[`strIngredient${i}`]?.trim();
+      const measure = meal[`strMeasure${i}`]?.trim();
+
+      if (ingredient && ingredient !== "") {
+        ingredients.push({ name: ingredient, measure: measure || "" });
+      }
+    }
+  }
+
+  useEffect(() => {
+    const fetchDetail = async () => {
+      try {
+        const res = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`);
+        const data = await res.json();
+        setMeal(data.meals[0]);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDetail();
+  }, [id]);
+
+  if (loading)
+    return (
+      <SafeAreaProvider>
+        <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" />
+        </SafeAreaView>
+      </SafeAreaProvider>
+    );
+
+  if (!meal) return <Text>No meal found</Text>;
+
+  const imageTranslateY = scrollY.interpolate({
+    inputRange: [-IMAGE_HEIGHT, 0, IMAGE_HEIGHT],
+    outputRange: [IMAGE_HEIGHT / 2, 0, -IMAGE_HEIGHT / 4],
+    extrapolate: "clamp",
+  });
+
+  const imageScale = scrollY.interpolate({
+    inputRange: [-IMAGE_HEIGHT, 0],
+    outputRange: [2, 1],
+    extrapolate: "clamp",
+  });
+
   return (
     <SafeAreaProvider>
       <SafeAreaView style={{ flex: 1 }}>
-        <View style={listCard.container}>
-          <ImageBackground
-            source={{ uri: 'https://www.themealdb.com/images/media/meals/1549542994.jpg' }}
-            style={listCard.trandingMeal}
-            resizeMode="cover"
+        <Animated.ScrollView
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
+          onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+            useNativeDriver: true,
+          })}
+          contentContainerStyle={{ paddingBottom: 0 }}
+        >
+          <Animated.View
+            style={{
+              height: IMAGE_HEIGHT,
+              transform: [{ translateY: imageTranslateY }, { scale: imageScale }],
+            }}
           >
-            <View style={listCard.textContainer}>
-              <Text style={listCard.mealText}>Chef John</Text>
+            <ImageBackground source={{ uri: meal.strMealThumb }} style={styles.image} resizeMode="cover">
+              <Pressable onPress={() => router.back()} style={{ position: "absolute", top: 10, padding: 10 }}>
+                <Text style={{ fontSize: 18, fontWeight: 400, color: '#fff', backgroundColor: "rgba(0, 0, 0, 0.5)", padding: 10, borderRadius: 8 }}> Back</Text>
+              </Pressable>
+              <View style={styles.imageOverlay}>
+                <Text style={styles.chefName}>Chef John</Text>
+              </View>
+            </ImageBackground>
+          </Animated.View>
+
+          {/* Instructions */}
+          <View style={styles.content}>
+            <Text style={styles.mealTitle}>{meal.strMeal}</Text>
+            <Text style={styles.instructions}>{meal.strInstructions}</Text>
+
+            <View style={{ flex: 1, flexDirection: 'row' }}>
+
+              <Text style={styles.sectionTitle}>Ingredients </Text>
+              <Text style={styles.IngredientCount}>({ingredients.length}) </Text>
             </View>
-          </ImageBackground>
-        </View>
-
-        <View style={listCard.IngredientListContainer}>
-          <Text style={{ fontSize: 22, fontWeight: "600", color: "#000000" }}>
-            Tortilla Pizza Recipe
-          </Text>
-          <Text>
-            This tortilla pizza is extremely easy to make. It is light enough to be a snack, serves well as an appetizer, or is so good that it can be devoured alone! You can use any sort of topping variation.
-          </Text>
-
-          <Text style={{ fontSize: 22, fontWeight: "600", color: "#000000" }}>
-            Ingredients
-          </Text>
-
-          {/* independent scroll only for ingredients */}
-          <ScrollView
-            style={{ flexGrow: 0 }}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 20 }}
-          >
-            {Array.from({ length: 20 }, (_, i) => (
-              <View key={i} style={listCard.ingredientListItem}>
-                <View style={{ flexDirection: "row", gap: 10, alignItems: 'center' }}>
+            {ingredients.map((item, index) => (
+              <View key={index} style={styles.ingredientItem}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                   <Image
-                    source={{ uri: 'https://www.themealdb.com/images/media/meals/1549542994.jpg' }}
-                    style={listCard.ingridentImage}
-                    resizeMode="cover"
+                    source={{ uri: meal.strMealThumb }}
+                    style={styles.ingredientImage}
                   />
-                  <Text style={listCard.ingredientname}>soft flour tortilla {i}</Text>
+                  <Text style={styles.ingredientName}>{item.name}</Text>
                 </View>
-                <Text>1</Text>
+                <Text style={styles.ingredientAmount}>{item.measure}</Text>
               </View>
             ))}
-          </ScrollView>
-        </View>
+          </View>
+        </Animated.ScrollView>
       </SafeAreaView>
     </SafeAreaProvider>
-  )
+  );
 }
 
-const listCard = StyleSheet.create({
-  container: {
-    borderRadius: 14,
-    height: 400,
-    overflow: "hidden",
+const styles = StyleSheet.create({
+  image: { flex: 1, justifyContent: "flex-end" },
+  imageOverlay: {
+    padding: 16,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    borderRadius: 10,
+    margin: 16,
   },
-  trandingMeal: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: 'center'
-  },
-  textContainer: {
-    position: 'absolute',
-    width: '90%',
-    bottom: 100,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    paddingVertical: 22,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-  },
-  mealText: {
-    color: "#fff",
-    fontSize: 22,
-    fontWeight: "500",
-  },
-  IngredientListContainer: {
-    flex: 1,
-    backgroundColor: '#FCFCFC',
-    borderRadius: 14,
-    marginTop: -60,
-    padding: 28,
-    gap: 10,
-  },
-  ingridentImage: {
-    height: 56,
-    width: 56,
-    borderRadius: 50
-  },
-  ingredientListItem: {
+  chefName: { color: "#fff", fontSize: 22, fontWeight: "600" },
+
+  content: { padding: 16, backgroundColor: '#FCFCFC' },
+  mealTitle: { fontSize: 24, fontWeight: "700", marginBottom: 12, position: 'sticky', top: 0 },
+  instructions: { fontSize: 16, lineHeight: 24, marginBottom: 16 },
+  sectionTitle: { fontSize: 22, fontWeight: "600", marginVertical: 12 },
+  IngredientCount: { fontSize: 22, fontWeight: "600", marginVertical: 12, color: "#25AE87" },
+
+  ingredientItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: '#ffffff',
-    height: 60,
-    paddingHorizontal: 16,
+    backgroundColor: "#fff",
+    padding: 12,
     borderRadius: 10,
-    marginBottom: 10
+    marginBottom: 10,
   },
-  ingredientname: {
-    color: "#000000",
-    fontSize: 18,
-    fontWeight: "500",
-  }
+  ingredientImage: { width: 56, height: 56, borderRadius: 28 },
+  ingredientName: { fontSize: 16, fontWeight: "500" },
+  ingredientAmount: { fontSize: 16, fontWeight: "500" },
 });

@@ -13,7 +13,7 @@ export default function Home() {
   const router = useRouter();
 
   const navigateTo = () => {
-    router.replace("/Home"); // prevent going back to splash
+    router.replace("/Home");
     console.log("navigate function is clicking");
   };
 
