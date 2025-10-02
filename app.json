@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "recipe-app",
+    "name": "chef recipe",
     "slug": "recipe-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,17 +9,20 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "peek.international.recipeapp.ios",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+       "adaptiveIcon": {
+        "foregroundImage": "./assets/images/app-logo.png",
+        "backgroundColor": "#E6F4FE"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "peek.international.recipeapp"
     },
     "web": {
       "output": "static",
@@ -43,6 +46,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "001f5894-a3d9-4302-b1f8-1d249586b704"
+      }
     }
   }
 }
