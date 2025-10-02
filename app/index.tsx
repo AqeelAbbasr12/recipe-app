@@ -14,7 +14,6 @@ export default function Home() {
 
   const navigateTo = () => {
     router.replace("/Home");
-    console.log("navigate function is clicking");
   };
 
   return (
